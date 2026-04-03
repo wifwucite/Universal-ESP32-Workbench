@@ -73,6 +73,14 @@ esptool --chip esp32c6 --port "$PORT" \
   0x0000 output/esp32c6/bootloader.bin \
   0x8000 output/esp32c6/partition-table.bin \
   0x10000 output/esp32c6/debug-test.bin
+
+# Flash (example: S3)
+esptool --chip esp32s3 --port "$PORT" \
+  --before=default-reset --after=watchdog-reset \
+  write-flash --flash-mode dio --flash-size 4MB \
+  0x0000 output/esp32s3/bootloader.bin \
+  0x8000 output/esp32s3/partition-table.bin \
+  0x10000 output/esp32s3/debug-test.bin
 ```
 
 ## End-to-End Debug Test
@@ -83,7 +91,7 @@ After flashing, verify the full debug chain:
 # 1. Check firmware running (serial)
 curl -s -X POST http://workbench.local:8080/api/serial/monitor \
   -H "Content-Type: application/json" \
-  -d '{"slot":"AUTO-1","pattern":"LOOP:","timeout":5}'
+  -d '{"slot":"SLOT3","pattern":"LOOP:","timeout":5}'
 # Expected: {"ok":true,"matched":true,"line":"LOOP: 42"}
 
 # 2. Check debug auto-started
@@ -91,9 +99,21 @@ curl -s http://workbench.local:8080/api/devices | \
   python3 -c "import json,sys; d=json.load(sys.stdin); s=next(x for x in d['slots'] if x.get('present')); print(f'chip={s.get(\"debug_chip\")}, gdb=:{s.get(\"debug_gdb_port\")}')"
 # Expected: chip=esp32c6, gdb=:3333
 
+
 # 3. Connect GDB (RISC-V example)
 riscv32-esp-elf-gdb output/esp32c6/debug-test.elf \
   -ex "target extended-remote workbench.local:3333" \
+  -ex "monitor reset halt" \
+  -ex "break debug_loop" \
+  -ex "continue" \
+  -ex "print loop_counter" \
+  -ex "step" \
+  -ex "print loop_counter"
+```
+
+# 3b. Connect GDB (XTensa example)
+xtensa-esp32s3-elf-gdb output/esp32s3/debug-test.elf \
+  -ex "target extended-remote workbench.local:3335" \
   -ex "monitor reset halt" \
   -ex "break debug_loop" \
   -ex "continue" \

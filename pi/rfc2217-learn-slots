@@ -16,13 +16,15 @@ def get_udev_info(devnode):
     """Get udev properties for a device."""
     try:
         result = subprocess.run(
-            ['udevadm', 'info', '-q', 'all', devnode],
-            capture_output=True, text=True, check=True
+            ["udevadm", "info", "-q", "all", devnode],
+            capture_output=True,
+            text=True,
+            check=True,
         )
         props = {}
         for line in result.stdout.splitlines():
-            if line.startswith('E: '):
-                key, _, value = line[3:].partition('=')
+            if line.startswith("E: "):
+                key, _, value = line[3:].partition("=")
                 props[key] = value
         return props
     except subprocess.CalledProcessError:
@@ -32,7 +34,7 @@ def get_udev_info(devnode):
 def find_serial_devices():
     """Find all ttyACM and ttyUSB devices."""
     devices = []
-    for pattern in ['/dev/ttyACM*', '/dev/ttyUSB*']:
+    for pattern in ["/dev/ttyACM*", "/dev/ttyUSB*"]:
         devices.extend(glob.glob(pattern))
     return sorted(devices)
 
@@ -53,10 +55,10 @@ def main():
             print(f"  {devnode}: Could not read udev info")
             continue
 
-        id_path = props.get('ID_PATH', 'N/A')
-        devpath = props.get('DEVPATH', 'N/A')
-        id_model = props.get('ID_MODEL', 'Unknown')
-        id_serial = props.get('ID_SERIAL_SHORT', props.get('ID_SERIAL', 'N/A'))
+        id_path = props.get("ID_PATH", "N/A")
+        devpath = props.get("DEVPATH", "N/A")
+        id_model = props.get("ID_MODEL", "Unknown")
+        id_serial = props.get("ID_SERIAL_SHORT", props.get("ID_SERIAL", "N/A"))
 
         print(f"Device: {devnode}")
         print(f"  Model:    {id_model}")
@@ -65,16 +67,12 @@ def main():
         print(f"  DEVPATH:  {devpath}")
         print()
 
-        if id_path != 'N/A':
-            slot_config = {
-                "label": "SLOT?",
-                "slot_key": id_path,
-                "tcp_port": 4001
-            }
-            print(f"  Add to /etc/rfc2217/slots.json:")
+        if id_path != "N/A":
+            slot_config = {"label": "SLOT?", "slot_key": id_path, "tcp_port": 4001}
+            print(f"  Add to /etc/rfc2217/workbench.json:")
             print(f"    {json.dumps(slot_config)}")
             print()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
