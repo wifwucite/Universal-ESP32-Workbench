@@ -18,7 +18,6 @@ the C3 native USB needs.
 The portal detects ttyACM devices and launches this server instead
 of esp_rfc2217_server automatically.
 """
-
 import argparse
 import logging
 import socket
@@ -32,20 +31,21 @@ import serial.rfc2217
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Plain RFC2217 server (direct DTR/RTS passthrough)"
-    )
+        description="Plain RFC2217 server (direct DTR/RTS passthrough)")
     parser.add_argument("SERIALPORT")
     parser.add_argument("-p", "--localport", type=int, default=2217)
-    parser.add_argument("-v", "--verbose", dest="verbosity", action="count", default=2)
+    parser.add_argument("-v", "--verbose", dest="verbosity",
+                        action="count", default=0)
     args = parser.parse_args()
 
     level = (logging.WARNING, logging.INFO, logging.DEBUG, logging.NOTSET)[
-        min(args.verbosity, 3)
-    ]
-    logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
+        min(args.verbosity, 3)]
+    logging.basicConfig(format="%(levelname)s: %(message)s",
+                        level=logging.INFO)
     logging.getLogger("rfc2217").setLevel(level)
 
-    ser = serial.serial_for_url(args.SERIALPORT, do_not_open=True, exclusive=False)
+    ser = serial.serial_for_url(args.SERIALPORT, do_not_open=True,
+                                exclusive=False)
     ser.timeout = 3
     ser.dtr = False
     ser.rts = False
@@ -58,13 +58,13 @@ def main():
     #   1. Clear DTR first  → GPIO9 HIGH (SPI boot selected)
     #   2. Brief delay      → let the USB-JTAG controller see DTR=0
     #   3. Clear RTS        → release reset → chip boots in SPI mode
-    if hasattr(ser, "fd"):
+    if hasattr(ser, 'fd'):
         attrs = termios.tcgetattr(ser.fd)
         attrs[2] &= ~termios.HUPCL  # cflag: clear HUPCL
         termios.tcsetattr(ser.fd, termios.TCSANOW, attrs)
-    ser.dtr = False  # GPIO9 HIGH — select SPI boot
-    time.sleep(0.1)  # Let USB-JTAG controller latch DTR=0
-    ser.rts = False  # Release reset — chip boots normally
+    ser.dtr = False          # GPIO9 HIGH — select SPI boot
+    time.sleep(0.1)          # Let USB-JTAG controller latch DTR=0
+    ser.rts = False          # Release reset — chip boots normally
     time.sleep(0.1)
     settings = ser.get_settings()
 
@@ -72,7 +72,8 @@ def main():
     srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     srv.bind(("", args.localport))
     srv.listen(1)
-    logging.info("Listening on port %d for %s", args.localport, args.SERIALPORT)
+    logging.info("Listening on port %d for %s", args.localport,
+                 args.SERIALPORT)
 
     while True:
         srv.settimeout(5)
@@ -98,9 +99,9 @@ def main():
 
         try:
             pm = serial.rfc2217.PortManager(
-                ser,
-                Sender(),
-                logger=logging.getLogger("rfc2217") if args.verbosity > 0 else None,
+                ser, Sender(),
+                logger=logging.getLogger("rfc2217") if args.verbosity > 0
+                else None,
             )
         except (BrokenPipeError, OSError):
             logging.info("Client disconnected during negotiation")
