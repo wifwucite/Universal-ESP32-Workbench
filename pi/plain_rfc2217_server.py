@@ -36,7 +36,7 @@ def main():
     )
     parser.add_argument("SERIALPORT")
     parser.add_argument("-p", "--localport", type=int, default=2217)
-    parser.add_argument("-v", "--verbose", dest="verbosity", action="count", default=0)
+    parser.add_argument("-v", "--verbose", dest="verbosity", action="count", default=2)
     args = parser.parse_args()
 
     level = (logging.WARNING, logging.INFO, logging.DEBUG, logging.NOTSET)[
