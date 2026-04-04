@@ -210,7 +210,12 @@ python3 /usr/local/bin/plain_rfc2217_server.py -p 4003 /dev/ttyACM0 -v -v -v
 
 # Other option for tracing serial server: https://linuxvox.com/blog/view-output-of-already-running-processes-in-linux/
 # PID can be obtained from web portal
-sudo strace -p <PID> -e write=1,2 -s 100 -tt 
+sudo strace -p <PID> -e write=1,2 -s 100 -tt
+
+# Check internet connectivity
+ip addr
+ip route
+# eth metric should be lower than wlan0, so wlan0 is only a fallback
 ```
 
 ### Common Issues

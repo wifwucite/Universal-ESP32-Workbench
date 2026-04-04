@@ -57,7 +57,7 @@ def monitor_serial(slot="SLOT1", pattern=None, timeout=30, baudrate=115200):
     line_count = 0
 
     try:
-        while time.time() - start < timeout:
+        while timeout <= 0 or time.time() - start < timeout:
             if ser.in_waiting > 0:
                 try:
                     line = ser.readline().decode("utf-8", errors="ignore").strip()
