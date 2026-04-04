@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="7" time="67.028" timestamp="2026-04-03T17:41:41.921439+00:00" hostname="cf1a217442b3"><testcase classname="workbench_test.TestBasicProtocol" name="test_wt100_ping_response" time="0.062" /><testcase classname="workbench_test.TestBasicProtocol" name="test_wt104_command_while_busy" time="0.070" /><testcase classname="workbench_test.TestSoftAPManagement" name="test_wt200_start_ap" time="13.229" /><testcase classname="workbench_test.TestSoftAPManagement" name="test_wt201_start_open_ap" time="13.306" /><testcase classname="workbench_test.TestSoftAPManagement" name="test_wt202_stop_ap" time="13.179" /><testcase classname="workbench_test.TestSoftAPManagement" name="test_wt203_stop_when_not_running" time="6.025" /><testcase classname="workbench_test.TestSoftAPManagement" name="test_wt204_restart_ap_new_config" time="13.053"><failure message="workbench_driver.CommandTimeout: GET /api/wifi/ap_status: &lt;urlopen error [Errno 101] Network is unreachable&gt;">self = &lt;urllib.request.HTTPHandler object at 0xffff9880dfd0&gt;, http_class = &lt;class 'http.client.HTTPConnection'&gt;
+req = &lt;urllib.request.Request object at 0xffff98809a50&gt;, http_conn_args = {}, host = 'workbench.local:8080'
+h = &lt;http.client.HTTPConnection object at 0xffff986752b0&gt;
+headers = {'Connection': 'close', 'Host': 'workbench.local:8080', 'User-Agent': 'Python-urllib/3.13'}
+
+    def do_open(self, http_class, req, **http_conn_args):
+        """Return an HTTPResponse object for the request, using http_class.
+    
+        http_class must implement the HTTPConnection API from http.client.
+        """
+        host = req.host
+        if not host:
+            raise URLError('no host given')
+    
+        # will parse host:port
+        h = http_class(host, timeout=req.timeout, **http_conn_args)
+        h.set_debuglevel(self._debuglevel)
+    
+        headers = dict(req.unredirected_hdrs)
+        headers.update({k: v for k, v in req.headers.items()
+                        if k not in headers})
+    
+        # TODO(jhylton): Should this be redesigned to handle
+        # persistent connections?
+    
+        # We want to make an HTTP/1.1 request, but the addinfourl
+        # class isn't prepared to deal with a persistent connection.
+        # It will try to read all remaining data from the socket,
+        # which will block while the server waits for the next request.
+        # So make sure the connection gets closed after the (only)
+        # request.
+        headers["Connection"] = "close"
+        headers = {name.title(): val for name, val in headers.items()}
+    
+        if req._tunnel_host:
+            tunnel_headers = {}
+            proxy_auth_hdr = "Proxy-Authorization"
+            if proxy_auth_hdr in headers:
+                tunnel_headers[proxy_auth_hdr] = headers[proxy_auth_hdr]
+                # Proxy-Authorization should not be sent to origin
+                # server.
+                del headers[proxy_auth_hdr]
+            h.set_tunnel(req._tunnel_host, headers=tunnel_headers)
+    
+        try:
+            try:
+&gt;               h.request(req.get_method(), req.selector, req.data, headers,
+                          encode_chunked=req.has_header('Transfer-encoding'))
+
+/usr/lib/python3.13/urllib/request.py:1319: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/usr/lib/python3.13/http/client.py:1338: in request
+    self._send_request(method, url, body, headers, encode_chunked)
+/usr/lib/python3.13/http/client.py:1384: in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+/usr/lib/python3.13/http/client.py:1333: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+/usr/lib/python3.13/http/client.py:1093: in _send_output
+    self.send(msg)
+/usr/lib/python3.13/http/client.py:1037: in send
+    self.connect()
+/usr/lib/python3.13/http/client.py:1003: in connect
+    self.sock = self._create_connection(
+/usr/lib/python3.13/socket.py:864: in create_connection
+    raise exceptions[0]
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+address = ('workbench.local', 8080), timeout = 10, source_address = None
+
+    def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
+                          source_address=None, *, all_errors=False):
+        """Connect to *address* and return the socket object.
+    
+        Convenience function.  Connect to *address* (a 2-tuple ``(host,
+        port)``) and return the socket object.  Passing the optional
+        *timeout* parameter will set the timeout on the socket instance
+        before attempting to connect.  If no *timeout* is supplied, the
+        global default timeout setting returned by :func:`getdefaulttimeout`
+        is used.  If *source_address* is set it must be a tuple of (host, port)
+        for the socket to bind as a source address before making the connection.
+        A host of '' or port 0 tells the OS to use the default. When a connection
+        cannot be created, raises the last error if *all_errors* is False,
+        and an ExceptionGroup of all errors if *all_errors* is True.
+        """
+    
+        host, port = address
+        exceptions = []
+        for res in getaddrinfo(host, port, 0, SOCK_STREAM):
+            af, socktype, proto, canonname, sa = res
+            sock = None
+            try:
+                sock = socket(af, socktype, proto)
+                if timeout is not _GLOBAL_DEFAULT_TIMEOUT:
+                    sock.settimeout(timeout)
+                if source_address:
+                    sock.bind(source_address)
+&gt;               sock.connect(sa)
+E               OSError: [Errno 101] Network is unreachable
+
+/usr/lib/python3.13/socket.py:849: OSError
+
+During handling of the above exception, another exception occurred:
+
+self = &lt;workbench_driver.WorkbenchDriver object at 0xffff9880da90&gt;, path = '/api/wifi/ap_status', timeout = 10
+
+    def _api_get(self, path: str, timeout: float = 10) -&gt; dict:
+        """GET an API endpoint, return parsed JSON."""
+        url = f"{self.base_url}{path}"
+        req = urllib.request.Request(url)
+        try:
+&gt;           with urllib.request.urlopen(req, timeout=timeout) as resp:
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+workbench_driver.py:95: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/usr/lib/python3.13/urllib/request.py:189: in urlopen
+    return opener.open(url, data, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.13/urllib/request.py:489: in open
+    response = self._open(req, data)
+               ^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.13/urllib/request.py:506: in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+/usr/lib/python3.13/urllib/request.py:466: in _call_chain
+    result = func(*args)
+             ^^^^^^^^^^^
+/usr/lib/python3.13/urllib/request.py:1348: in http_open
+    return self.do_open(http.client.HTTPConnection, req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;urllib.request.HTTPHandler object at 0xffff9880dfd0&gt;, http_class = &lt;class 'http.client.HTTPConnection'&gt;
+req = &lt;urllib.request.Request object at 0xffff98809a50&gt;, http_conn_args = {}, host = 'workbench.local:8080'
+h = &lt;http.client.HTTPConnection object at 0xffff986752b0&gt;
+headers = {'Connection': 'close', 'Host': 'workbench.local:8080', 'User-Agent': 'Python-urllib/3.13'}
+
+    def do_open(self, http_class, req, **http_conn_args):
+        """Return an HTTPResponse object for the request, using http_class.
+    
+        http_class must implement the HTTPConnection API from http.client.
+        """
+        host = req.host
+        if not host:
+            raise URLError('no host given')
+    
+        # will parse host:port
+        h = http_class(host, timeout=req.timeout, **http_conn_args)
+        h.set_debuglevel(self._debuglevel)
+    
+        headers = dict(req.unredirected_hdrs)
+        headers.update({k: v for k, v in req.headers.items()
+                        if k not in headers})
+    
+        # TODO(jhylton): Should this be redesigned to handle
+        # persistent connections?
+    
+        # We want to make an HTTP/1.1 request, but the addinfourl
+        # class isn't prepared to deal with a persistent connection.
+        # It will try to read all remaining data from the socket,
+        # which will block while the server waits for the next request.
+        # So make sure the connection gets closed after the (only)
+        # request.
+        headers["Connection"] = "close"
+        headers = {name.title(): val for name, val in headers.items()}
+    
+        if req._tunnel_host:
+            tunnel_headers = {}
+            proxy_auth_hdr = "Proxy-Authorization"
+            if proxy_auth_hdr in headers:
+                tunnel_headers[proxy_auth_hdr] = headers[proxy_auth_hdr]
+                # Proxy-Authorization should not be sent to origin
+                # server.
+                del headers[proxy_auth_hdr]
+            h.set_tunnel(req._tunnel_host, headers=tunnel_headers)
+    
+        try:
+            try:
+                h.request(req.get_method(), req.selector, req.data, headers,
+                          encode_chunked=req.has_header('Transfer-encoding'))
+            except OSError as err: # timeout error
+&gt;               raise URLError(err)
+E               urllib.error.URLError: &lt;urlopen error [Errno 101] Network is unreachable&gt;
+
+/usr/lib/python3.13/urllib/request.py:1322: URLError
+
+During handling of the above exception, another exception occurred:
+
+self = &lt;workbench_test.TestSoftAPManagement object at 0xffff9881a0f0&gt;
+workbench = &lt;workbench_driver.WorkbenchDriver object at 0xffff9880da90&gt;
+
+    def test_wt204_restart_ap_new_config(self, workbench):
+        """WT-204: AP_START while running restarts with new config."""
+        workbench.ap_start("WT-SSID-A", "password123")
+&gt;       status_a = workbench.ap_status()
+                   ^^^^^^^^^^^^^^^^^^^^^
+
+workbench_test.py:83: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+workbench_driver.py:160: in ap_status
+    result = self._api_get("/api/wifi/ap_status", timeout=10)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;workbench_driver.WorkbenchDriver object at 0xffff9880da90&gt;, path = '/api/wifi/ap_status', timeout = 10
+
+    def _api_get(self, path: str, timeout: float = 10) -&gt; dict:
+        """GET an API endpoint, return parsed JSON."""
+        url = f"{self.base_url}{path}"
+        req = urllib.request.Request(url)
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                data = json.loads(resp.read())
+        except urllib.error.URLError as e:
+&gt;           raise CommandTimeout(f"GET {path}: {e}")
+E           workbench_driver.CommandTimeout: GET /api/wifi/ap_status: &lt;urlopen error [Errno 101] Network is unreachable&gt;
+
+workbench_driver.py:98: CommandTimeout</failure></testcase><testcase time="0.000" /></testsuite></testsuites>
