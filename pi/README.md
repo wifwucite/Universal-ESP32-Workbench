@@ -202,6 +202,15 @@ sudo systemctl restart rfc2217-portal
 
 # Check memory (important on Pi Zero 2 W)
 free -h
+
+# Run serial server directly
+ps -ef | grep py
+sudo systemctl stop rfc2217-portal
+python3 /usr/local/bin/plain_rfc2217_server.py -p 4003 /dev/ttyACM0 -v -v -v
+
+# Other option for tracing serial server: https://linuxvox.com/blog/view-output-of-already-running-processes-in-linux/
+# PID can be obtained from web portal
+sudo strace -p <PID> -e write=1,2 -s 100 -tt 
 ```
 
 ### Common Issues
