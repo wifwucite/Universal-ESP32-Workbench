@@ -15,7 +15,7 @@ from workbench_driver import WorkbenchDriver
 def pytest_addoption(parser):
     parser.addoption(
         "--wt-url",
-        default=os.environ.get("WORKBENCH_URL", "http://localhost:8080"),
+        default=os.environ.get("WORKBENCH_URL", "http://workbench.local:8080"),
         help="Portal URL for the Embedded Workbench Pi",
     )
     parser.addoption(
