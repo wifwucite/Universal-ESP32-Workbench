@@ -104,13 +104,15 @@ class WorkbenchDriver:
             raise CommandError(cmd, data)
         return data
 
-    def _api_post(self, path: str, body: Optional[dict] = None,
-                  timeout: float = 10) -> dict:
+    def _api_post(
+        self, path: str, body: Optional[dict] = None, timeout: float = 10
+    ) -> dict:
         """POST JSON to an API endpoint, return parsed JSON."""
         url = f"{self.base_url}{path}"
         data_bytes = json.dumps(body or {}).encode("utf-8")
         req = urllib.request.Request(
-            url, data=data_bytes,
+            url,
+            data=data_bytes,
             headers={"Content-Type": "application/json"},
             method="POST",
         )
@@ -133,8 +135,7 @@ class WorkbenchDriver:
         result = self._api_get("/api/wifi/mode", timeout=5)
         return {k: v for k, v in result.items() if k != "ok"}
 
-    def set_mode(self, mode: str, ssid: str = "",
-                 password: str = "") -> dict:
+    def set_mode(self, mode: str, ssid: str = "", password: str = "") -> dict:
         args: dict = {"mode": mode}
         if ssid:
             args["ssid"] = ssid
@@ -145,8 +146,7 @@ class WorkbenchDriver:
 
     # ── AP management ────────────────────────────────────────────────
 
-    def ap_start(self, ssid: str, password: str = "",
-                 channel: int = 6) -> dict:
+    def ap_start(self, ssid: str, password: str = "", channel: int = 6) -> dict:
         args = {"ssid": ssid, "channel": channel}
         if password:
             args["pass"] = password
@@ -162,8 +162,7 @@ class WorkbenchDriver:
 
     # ── STA management ───────────────────────────────────────────────
 
-    def sta_join(self, ssid: str, password: str = "",
-                 timeout: int = 15) -> dict:
+    def sta_join(self, ssid: str, password: str = "", timeout: int = 15) -> dict:
         args = {"ssid": ssid, "timeout": timeout}
         if password:
             args["pass"] = password
@@ -175,10 +174,14 @@ class WorkbenchDriver:
 
     # ── HTTP relay ───────────────────────────────────────────────────
 
-    def http_request(self, method: str, url: str,
-                     headers: Optional[dict] = None,
-                     body: Optional[bytes] = None,
-                     timeout: int = 10) -> Response:
+    def http_request(
+        self,
+        method: str,
+        url: str,
+        headers: Optional[dict] = None,
+        body: Optional[bytes] = None,
+        timeout: int = 10,
+    ) -> Response:
         args: dict = {"method": method, "url": url, "timeout": timeout}
         if headers:
             args["headers"] = headers
@@ -200,14 +203,14 @@ class WorkbenchDriver:
     def http_get(self, url: str, **kwargs) -> Response:
         return self.http_request("GET", url, **kwargs)
 
-    def http_post(self, url: str, json_data: Optional[dict] = None,
-                  **kwargs) -> Response:
+    def http_post(
+        self, url: str, json_data: Optional[dict] = None, **kwargs
+    ) -> Response:
         if json_data is not None:
             body = json.dumps(json_data).encode("utf-8")
             headers = kwargs.pop("headers", {})
             headers.setdefault("Content-Type", "application/json")
-            return self.http_request("POST", url, headers=headers,
-                                     body=body, **kwargs)
+            return self.http_request("POST", url, headers=headers, body=body, **kwargs)
         return self.http_request("POST", url, **kwargs)
 
     # ── WiFi scanning ────────────────────────────────────────────────
@@ -218,16 +221,13 @@ class WorkbenchDriver:
 
     # ── Events ───────────────────────────────────────────────────────
 
-    def wait_for_event(self, event_type: str,
-                       timeout: float = 30) -> dict:
+    def wait_for_event(self, event_type: str, timeout: float = 30) -> dict:
         """Wait for a specific event type via long-polling."""
         deadline = time.monotonic() + timeout
         while True:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                raise TimeoutError(
-                    f"No {event_type} event within {timeout}s"
-                )
+                raise TimeoutError(f"No {event_type} event within {timeout}s")
             poll_timeout = min(remaining, 5)
             try:
                 result = self._api_get(
@@ -285,41 +285,37 @@ class WorkbenchDriver:
 
     def serial_reset(self, slot: str = "SLOT2") -> dict:
         """POST /api/serial/reset — returns {ok, output}."""
-        result = self._api_post(
-            "/api/serial/reset", {"slot": slot}, timeout=30
-        )
+        result = self._api_post("/api/serial/reset", {"slot": slot}, timeout=30)
         return {k: v for k, v in result.items() if k != "ok"}
 
-    def serial_output(self, slot: str = "SLOT2",
-                      lines: int = 50, since: float = 0) -> dict:
+    def serial_output(
+        self, slot: str = "SLOT2", lines: int = 50, since: float = 0
+    ) -> dict:
         """GET /api/serial/output — passive buffer read."""
         return self._api_get(
             f"/api/serial/output?slot={slot}&lines={lines}&since={since}"
         )
 
-    def serial_monitor(self, slot: str = "SLOT2",
-                       pattern: Optional[str] = None,
-                       timeout: float = 10) -> dict:
+    def serial_monitor(
+        self, slot: str = "SLOT2", pattern: Optional[str] = None, timeout: float = 10
+    ) -> dict:
         """POST /api/serial/monitor — returns {ok, matched, line, output}."""
         body: dict = {"slot": slot, "timeout": timeout}
         if pattern is not None:
             body["pattern"] = pattern
-        result = self._api_post(
-            "/api/serial/monitor", body, timeout=timeout + 5
-        )
+        result = self._api_post("/api/serial/monitor", body, timeout=timeout + 5)
         return {k: v for k, v in result.items() if k != "ok"}
 
-    def enter_portal(self, slot: str = "SLOT2",
-                     resets: int = 3) -> dict:
+    def enter_portal(self, slot: str = "SLOT2", resets: int = 3) -> dict:
         """POST /api/enter-portal — starts background portal trigger."""
         result = self._api_post(
             "/api/enter-portal", {"slot": slot, "resets": resets}, timeout=10
         )
         return {k: v for k, v in result.items() if k != "ok"}
 
-    def wait_for_state(self, slot_label: str, state: str,
-                       timeout: float = 30,
-                       poll_interval: float = 1) -> dict:
+    def wait_for_state(
+        self, slot_label: str, state: str, timeout: float = 30, poll_interval: float = 1
+    ) -> dict:
         """Poll /api/devices until slot reaches target state or timeout."""
         deadline = time.monotonic() + timeout
         last_slot = None
@@ -369,29 +365,43 @@ class WorkbenchDriver:
             timeout=timeout + 10,
         )
         confirmed = result.get("confirmed", False)
-        logger.info("Human interaction %s", "confirmed" if confirmed else "not confirmed")
+        logger.info(
+            "Human interaction %s", "confirmed" if confirmed else "not confirmed"
+        )
         return confirmed
 
     # ── Test progress ──────────────────────────────────────────────
 
     def test_start(self, spec: str, phase: str, total: int) -> dict:
         """Start a test session on the Pi UI."""
-        return self._api_post("/api/test/update",
-                              {"spec": spec, "phase": phase, "total": total})
+        return self._api_post(
+            "/api/test/update", {"spec": spec, "phase": phase, "total": total}
+        )
 
-    def test_step(self, test_id: str, name: str, step: str,
-                  manual: bool = False) -> dict:
+    def test_step(
+        self, test_id: str, name: str, step: str, manual: bool = False
+    ) -> dict:
         """Update the current test step shown on the Pi UI."""
-        return self._api_post("/api/test/update",
-                              {"current": {"id": test_id, "name": name,
-                                           "step": step, "manual": manual}})
+        return self._api_post(
+            "/api/test/update",
+            {"current": {"id": test_id, "name": name, "step": step, "manual": manual}},
+        )
 
-    def test_result(self, test_id: str, name: str, result: str,
-                    details: str = "") -> dict:
+    def test_result(
+        self, test_id: str, name: str, result: str, details: str = ""
+    ) -> dict:
         """Record a test result (PASS/FAIL/SKIP)."""
-        return self._api_post("/api/test/update",
-                              {"result": {"id": test_id, "name": name,
-                                          "result": result, "details": details}})
+        return self._api_post(
+            "/api/test/update",
+            {
+                "result": {
+                    "id": test_id,
+                    "name": name,
+                    "result": result,
+                    "details": details,
+                }
+            },
+        )
 
     def test_end(self) -> dict:
         """End the test session."""
@@ -409,8 +419,9 @@ class WorkbenchDriver:
 
     # ── CW beacon ─────────────────────────────────────────────────────
 
-    def cw_start(self, freq: int, message: str, wpm: int = 15,
-                 pin: int = 5, repeat: bool = True) -> dict:
+    def cw_start(
+        self, freq: int, message: str, wpm: int = 15, pin: int = 5, repeat: bool = True
+    ) -> dict:
         """Start CW beacon on GPCLK pin.
 
         Args:
@@ -423,9 +434,16 @@ class WorkbenchDriver:
         Returns:
             dict with actual freq_hz, divider, and beacon parameters.
         """
-        return self._api_post("/api/cw/start", {
-            "pin": pin, "freq": freq, "message": message,
-            "wpm": wpm, "repeat": repeat})
+        return self._api_post(
+            "/api/cw/start",
+            {
+                "pin": pin,
+                "freq": freq,
+                "message": message,
+                "wpm": wpm,
+                "repeat": repeat,
+            },
+        )
 
     def cw_stop(self) -> dict:
         """Stop CW beacon."""
@@ -435,21 +453,23 @@ class WorkbenchDriver:
         """Get current CW beacon state."""
         return self._api_get("/api/cw/status")
 
-    def cw_frequencies(self, low: int = 3_500_000,
-                       high: int = 4_000_000) -> list:
+    def cw_frequencies(self, low: int = 3_500_000, high: int = 4_000_000) -> list:
         """List achievable GPCLK frequencies in a range.
 
         Returns:
             list of {divider, freq_hz} dicts.
         """
-        result = self._api_get(
-            f"/api/cw/frequencies?low={low}&high={high}")
+        result = self._api_get(f"/api/cw/frequencies?low={low}&high={high}")
         return result.get("frequencies", [])
 
     # ── GDB debug ─────────────────────────────────────────────────────
 
-    def debug_start(self, slot: str = None, chip: str = None,
-                    probe: str = None) -> dict:
+    def debug_start(
+        self,
+        slot: Optional[str] = None,
+        chip: Optional[str] = None,
+        probe: Optional[str] = None,
+    ) -> dict:
         """Start OpenOCD debug session.
 
         All parameters are optional — the workbench auto-detects the
@@ -472,7 +492,7 @@ class WorkbenchDriver:
             body["probe"] = probe
         return self._api_post("/api/debug/start", body, timeout=45)
 
-    def debug_stop(self, slot: str = None) -> dict:
+    def debug_stop(self, slot: Optional[str] = None) -> dict:
         """Stop OpenOCD debug session. Auto-finds active session if slot omitted."""
         body = {}
         if slot:
@@ -494,8 +514,12 @@ class WorkbenchDriver:
 
     # ── UDP log ──────────────────────────────────────────────────────
 
-    def udplog(self, source: str = None, since: str = None,
-               limit: int = None) -> list[dict]:
+    def udplog(
+        self,
+        source: Optional[str] = None,
+        since: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> list[dict]:
         """GET /api/udplog — buffered UDP debug log lines from ESP32 devices."""
         params = []
         if source:
@@ -532,24 +556,28 @@ class WorkbenchDriver:
 
     def firmware_upload(self, project: str, filepath: str) -> dict:
         """POST /api/firmware/upload — upload a binary file."""
-        import mimetypes
         boundary = "----WorkbenchUpload"
         filename = os.path.basename(filepath)
         with open(filepath, "rb") as f:
             file_data = f.read()
 
         body = (
-            f"--{boundary}\r\n"
-            f'Content-Disposition: form-data; name="project"\r\n\r\n'
-            f"{project}\r\n"
-            f"--{boundary}\r\n"
-            f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'
-            f"Content-Type: application/octet-stream\r\n\r\n"
-        ).encode() + file_data + f"\r\n--{boundary}--\r\n".encode()
+            (
+                f"--{boundary}\r\n"
+                f'Content-Disposition: form-data; name="project"\r\n\r\n'
+                f"{project}\r\n"
+                f"--{boundary}\r\n"
+                f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'
+                f"Content-Type: application/octet-stream\r\n\r\n"
+            ).encode()
+            + file_data
+            + f"\r\n--{boundary}--\r\n".encode()
+        )
 
         url = f"{self.base_url}/api/firmware/upload"
         req = urllib.request.Request(
-            url, data=body,
+            url,
+            data=body,
             headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
             method="POST",
         )
@@ -565,7 +593,8 @@ class WorkbenchDriver:
         url = f"{self.base_url}/api/firmware/delete"
         data_bytes = json.dumps({"project": project, "filename": filename}).encode()
         req = urllib.request.Request(
-            url, data=data_bytes,
+            url,
+            data=data_bytes,
             headers={"Content-Type": "application/json"},
             method="DELETE",
         )
@@ -577,8 +606,9 @@ class WorkbenchDriver:
 
     # ── BLE ──────────────────────────────────────────────────────────
 
-    def ble_scan(self, timeout: int = 5,
-                 name_filter: str = None) -> list[dict]:
+    def ble_scan(
+        self, timeout: int = 5, name_filter: Optional[str] = None
+    ) -> list[dict]:
         """Scan for BLE peripherals."""
         body: dict = {"timeout": timeout}
         if name_filter:
@@ -594,14 +624,16 @@ class WorkbenchDriver:
         """Disconnect current BLE connection."""
         return self._api_post("/api/ble/disconnect")
 
-    def ble_write(self, characteristic: str, data: str,
-                  response: bool = False) -> dict:
+    def ble_write(self, characteristic: str, data: str, response: bool = False) -> dict:
         """Write hex bytes to a GATT characteristic."""
-        return self._api_post("/api/ble/write", {
-            "characteristic": characteristic,
-            "data": data,
-            "response": response,
-        })
+        return self._api_post(
+            "/api/ble/write",
+            {
+                "characteristic": characteristic,
+                "data": data,
+                "response": response,
+            },
+        )
 
     def ble_status(self) -> dict:
         """Get BLE connection state."""
