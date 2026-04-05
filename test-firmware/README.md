@@ -31,16 +31,45 @@ Main outputs:
 
 Run from `test-firmware/`:
 
+### Main option (based on DTR/RTS)
+
+Note: If auto-reset is flaky on your board, adding a capacitor between EN and GND
+(typically 1uF to 10uF, often 10uF) can improve timing reliability.
+
 ```bash
 source ~/esp/esp-idf/export.sh
 cd /workspaces/Universal-ESP32-Workbench/test-firmware/build
-python -m esptool --chip esp32 --port "rfc2217://workbench.local:4001?ign_set_control" --baud 460800 --before default-reset --after no-reset write-flash @flash_args
+python -m esptool --chip esp32 --port "rfc2217://workbench.local:4001" --baud 460800 write-flash @flash_args
 ```
 
-After flashing, reboot through the workbench API:
+This relies on RFC2217 DTR/RTS control line toggling from esptool:
+
+- DTR/RTS are modem control signals, not serial data bytes.
+- On ESP32 auto-programming circuits, one line drives EN (reset) and the other
+  influences GPIO0 (boot strap) through transistor logic.
+- esptool's default pre-flash reset (`--before default_reset`) toggles these lines
+  to reset the chip while GPIO0 is low at sampling time, entering ROM download mode.
+- If timing works, flash starts without touching board buttons.
+
+### Alternative option
+
+Only when GPIOs are wired:
 
 ```bash
-curl -sS -X POST http://workbench.local:8080/api/serial/reset \
+# 1) Force download mode on SLOT1
+curl -sS -X POST "http://workbench.local:8080/api/serial/recover" \
+  -H "Content-Type: application/json" \
+  -d '{"slot":"SLOT1"}'
+
+# 2) Flash over RFC2217
+python -m esptool --chip esp32 \
+  --port "rfc2217://workbench.local:4001?ign_set_control" \
+  --baud 460800 \
+  --before no_reset --after no_reset \
+  write-flash @flash_args
+
+# 3) Release BOOT and reboot normally
+curl -sS -X POST "http://workbench.local:8080/api/serial/release" \
   -H "Content-Type: application/json" \
   -d '{"slot":"SLOT1"}'
 ```
@@ -87,27 +116,32 @@ curl -s http://workbench.local:8080/api/info | jq .
 ### "Wrong boot mode detected (0x13)! The chip needs to be in download mode"
 
 - Cause: the ESP32 booted normally instead of entering download mode. `--before default_reset` toggles DTR/RTS to trigger the auto-download circuit, but it is not working (no auto-download circuit on the board, or DTR/RTS not wired).
-- Fix: hold **BOOT**, press **RESET/EN**, release **RESET/EN**, release **BOOT**, when the dots appear "..."
-```
-
-### Failed to connect / sync to ESP32 bootloader
-
-- Cause: reset/boot timing issue, especially after previous failed flash attempts.
-- Fix:
-  1. Ensure slot is present and state is `idle`.
-  2. Retry flash command.
-  3. If still failing, run a reset and retry:
-
-```bash
-curl -sS -X POST http://workbench.local:8080/api/serial/reset \
-  -H "Content-Type: application/json" \
-  -d '{"slot":"SLOT1"}'
-```
+- Fix option 1 (manual): hold **BOOT**, press **RESET/EN**, release **RESET/EN**, release **BOOT**, when the dots appear "..."
+- Fix option 2 (hardware): add a capacitor between EN and GND (typically 1uF to 10uF, often 10uF) to improve reset timing reliability, then retry the flash command.
 
 ### "Device PID identification is only supported on COM and /dev/ serial ports"
 
 - This line is informational when using RFC2217 URLs and can be ignored.
 - It is not the root cause of flash failure.
+
+### RFC2217 control-line negotiation issues (`ign_set_control`)
+
+- Symptom: esptool fails early, hangs during connect, or reports RFC2217 control
+  negotiation issues while using a network serial URL.
+- Fix: append `?ign_set_control` to the RFC2217 port URL.
+
+Example:
+
+```bash
+python -m esptool --chip esp32 \
+  --port "rfc2217://workbench.local:4001?ign_set_control" \
+  --baud 460800 write-flash @flash_args
+```
+
+What this does:
+
+- pyserial stops waiting for strict RFC2217 `SET_CONTROL` acknowledgments.
+- DTR/RTS toggling still happens; only response handling is relaxed.
 
 ### Wrong chip / offset mismatch
 
