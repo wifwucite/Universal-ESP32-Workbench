@@ -15,8 +15,7 @@ from workbench_driver import CommandError, CommandTimeout
 
 # Path to pre-built debug-test firmware binaries
 DEBUG_TEST_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "debug-test", "output"
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "debug-test", "output"
 )
 
 
@@ -173,6 +172,7 @@ class TestSTAMode:
     @pytest.fixture
     def sta_network(self):
         import os
+
         ssid = os.environ.get("WIFI_TEST_STA_SSID")
         password = os.environ.get("WIFI_TEST_STA_PASS", "")
         if not ssid:
@@ -192,7 +192,8 @@ class TestSTAMode:
         if not sta_network["password"]:
             pytest.skip("Test network has no password")
         resp = workbench.sta_join(
-            sta_network["ssid"], sta_network["password"],
+            sta_network["ssid"],
+            sta_network["password"],
         )
         assert "ip" in resp
         assert "gateway" in resp
@@ -204,20 +205,24 @@ class TestSTAMode:
             pytest.skip("Test network has no password")
         with pytest.raises(CommandError):
             workbench.sta_join(
-                sta_network["ssid"], "wrong_password_here", timeout=10,
+                sta_network["ssid"],
+                "wrong_password_here",
+                timeout=10,
             )
 
     def test_wt403_join_nonexistent_network(self, workbench):
         """WT-403: Nonexistent SSID returns ERR with timeout."""
         with pytest.raises(CommandError):
             workbench.sta_join(
-                "NONEXISTENT_NETWORK_XYZ_999", timeout=5,
+                "NONEXISTENT_NETWORK_XYZ_999",
+                timeout=5,
             )
 
     def test_wt404_leave_sta(self, workbench, sta_network):
         """WT-404: STA_LEAVE after join returns OK."""
         workbench.sta_join(
-            sta_network["ssid"], sta_network["password"],
+            sta_network["ssid"],
+            sta_network["password"],
         )
         workbench.sta_leave()
 
@@ -228,7 +233,8 @@ class TestSTAMode:
         assert status["active"] is True
 
         workbench.sta_join(
-            sta_network["ssid"], sta_network["password"],
+            sta_network["ssid"],
+            sta_network["password"],
         )
         status = workbench.ap_status()
         assert status["active"] is False
@@ -290,6 +296,7 @@ class TestHTTPRelay:
     def test_wt506_http_via_sta_mode(self, workbench):
         """WT-506: HTTP relay works in STA mode."""
         import os
+
         ssid = os.environ.get("WIFI_TEST_STA_SSID")
         password = os.environ.get("WIFI_TEST_STA_PASS", "")
         target_url = os.environ.get("WIFI_TEST_HTTP_URL")
@@ -360,8 +367,7 @@ class TestCWBeacon:
 
     def test_wt1300_start_and_status(self, workbench):
         """WT-1300: Start beacon and verify status shows active."""
-        result = workbench.cw_start(
-            freq=3_571_000, message="VVV", wpm=15)
+        result = workbench.cw_start(freq=3_571_000, message="VVV", wpm=15)
         assert result["pin"] == 5
         assert result["divider"] == 140
         assert abs(result["freq_hz"] - 3_571_428.57) < 1
@@ -516,11 +522,9 @@ class TestAutoDebug:
         workbench.debug_stop()
         time.sleep(1)
         result = workbench.debug_start()
-        assert result["chip"] in (
-            "esp32c3", "esp32c6", "esp32h2", "esp32s3", "esp32")
+        assert result["chip"] in ("esp32c3", "esp32c6", "esp32h2", "esp32s3", "esp32")
         status = workbench.debug_status()
-        active = [s for s, info in status.get("slots", {}).items()
-                  if info["debugging"]]
+        active = [s for s, info in status.get("slots", {}).items() if info["debugging"]]
         assert len(active) >= 1, "No debug session active"
 
     @requires_dut
@@ -532,12 +536,16 @@ class TestAutoDebug:
             workbench.debug_start()
             time.sleep(1)
         devices = workbench.get_devices()
-        debug_devices = [d for d in devices
-                         if d.get("debugging") and d.get("present")]
+        debug_devices = [d for d in devices if d.get("debugging") and d.get("present")]
         assert len(debug_devices) >= 1
         dev = debug_devices[0]
         assert dev["debug_chip"] in (
-            "esp32c3", "esp32c6", "esp32h2", "esp32s3", "esp32")
+            "esp32c3",
+            "esp32c6",
+            "esp32h2",
+            "esp32s3",
+            "esp32",
+        )
         assert isinstance(dev["debug_gdb_port"], int)
         assert dev["debug_gdb_port"] > 0
 
@@ -637,8 +645,7 @@ def _wait_for_state(workbench, check_fn, timeout=30, poll=1.0, what="state"):
         if dev and check_fn(dev):
             return dev
         time.sleep(poll)
-    raise AssertionError(
-        f"Timed out after {timeout}s waiting for {what}")
+    raise AssertionError(f"Timed out after {timeout}s waiting for {what}")
 
 
 def _flash_device(workbench, chip, target_dir):
@@ -677,19 +684,34 @@ def _flash_device(workbench, chip, target_dir):
         _wait_for_state(
             workbench,
             lambda d: d.get("running") and not d.get("debugging"),
-            timeout=20, what="debug stopped before flash")
+            timeout=20,
+            what="debug stopped before flash",
+        )
 
     bl_offset = "0x1000" if chip == "esp32" else "0x0000"
     cmd = [
-        "python3", "-m", "esptool",
-        "--chip", chip,
-        "--port", serial_url,
-        "--before", "default-reset",
-        "--after", "no-reset",
-        "write-flash", "--flash-mode", "dio", "--flash-size", "4MB",
-        bl_offset, bootloader,
-        "0x8000", partition,
-        "0x10000", app,
+        "python3",
+        "-m",
+        "esptool",
+        "--chip",
+        chip,
+        "--port",
+        serial_url,
+        "--before",
+        "default-reset",
+        "--after",
+        "no-reset",
+        "write-flash",
+        "--flash-mode",
+        "dio",
+        "--flash-size",
+        "4MB",
+        bl_offset,
+        bootloader,
+        "0x8000",
+        partition,
+        "0x10000",
+        app,
     ]
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
@@ -712,7 +734,9 @@ def _flash_device(workbench, chip, target_dir):
         _wait_for_state(
             workbench,
             lambda d: d.get("debugging"),
-            timeout=30, what="debug restart after flash")
+            timeout=30,
+            what="debug restart after flash",
+        )
         # OpenOCD halts CPU on connect — reset run so firmware boots
         host = workbench.base_url.split("//")[1].split(":")[0]
         dev = _find_present_device(workbench)
@@ -757,15 +781,20 @@ class TestEndToEnd:
     def _track_progress(self, workbench, request):
         """Report test progress to the workbench panel."""
         test_id = request.node.name.split("_")[1].upper()  # e.g. "WT1800"
-        raw_name = request.node.obj.__doc__.split("\n")[0].strip() if request.node.obj.__doc__ else request.node.name
+        raw_name = (
+            request.node.obj.__doc__.split("\n")[0].strip()
+            if request.node.obj.__doc__
+            else request.node.name
+        )
         # Strip "WT-1800: " prefix from docstring — test_id already carries it
-        test_name = re.sub(r'^WT-?\d+:\s*', '', raw_name)
+        test_name = re.sub(r"^WT-?\d+:\s*", "", raw_name)
 
         if not TestEndToEnd._test_session_started:
             TestEndToEnd._test_session_started = True
             try:
                 workbench.test_start(
-                    spec="End-to-End Flash+Debug", phase="WT-18xx", total=6)
+                    spec="End-to-End Flash+Debug", phase="WT-18xx", total=6
+                )
             except Exception:
                 pass
 
@@ -823,8 +852,9 @@ class TestEndToEnd:
 
         # Verify serial output
         result = workbench.serial_monitor(slot, pattern="LOOP:", timeout=15)
-        assert result.get("matched"), \
+        assert result.get("matched"), (
             f"Expected 'LOOP:' in serial output, got: {result.get('output', [])[-5:]}"
+        )
         TestEndToEnd._flash_ok = True
 
     @requires_dut
@@ -881,6 +911,7 @@ class TestEndToEnd:
         # Read PC before step
         out1 = _ocd_command(host, telnet_port, "reg pc")
         import re
+
         m1 = re.search(r"0x[0-9a-fA-F]+", out1)
         assert m1, f"Could not read PC: {out1}"
         pc_before = m1.group()
@@ -895,8 +926,9 @@ class TestEndToEnd:
         assert m2, f"Could not read PC after step: {out2}"
         pc_after = m2.group()
 
-        assert pc_before != pc_after, \
+        assert pc_before != pc_after, (
             f"PC did not advance: before={pc_before}, after={pc_after}"
+        )
 
         # Resume
         _ocd_command(host, telnet_port, "resume", timeout=2)
@@ -958,8 +990,7 @@ class TestEndToEnd:
 
         # Set breakpoint a few instructions ahead
         bp_addr = pc + 8
-        out = _ocd_command(host, telnet_port,
-                           f"bp 0x{bp_addr:08X} 2 hw")
+        out = _ocd_command(host, telnet_port, f"bp 0x{bp_addr:08X} 2 hw")
         assert "breakpoint" in out.lower() or ">" in out
 
         # Resume — should hit breakpoint
@@ -980,7 +1011,6 @@ class TestEndToEnd:
         assert dev, "No device connected"
 
         chip = dev.get("debug_chip", "")
-        url = dev.get("url", "")
         slot = dev.get("label", "")
 
         if not chip:
@@ -994,7 +1024,9 @@ class TestEndToEnd:
 
         # Verify debug is active before flash
         dev_before = _find_present_device(workbench)
-        assert dev_before.get("debugging"), "Debug should be active before flash"
+        assert dev_before and dev_before.get("debugging"), (
+            "Debug should be active before flash"
+        )
 
         # Flash via portal API (handles debug stop/restart automatically)
         success = _flash_device(workbench, chip, target_dir)
@@ -1004,7 +1036,9 @@ class TestEndToEnd:
         dev_after = _wait_for_state(
             workbench,
             lambda d: d.get("debugging"),
-            timeout=30, what="debug restart after flash")
+            timeout=30,
+            what="debug restart after flash",
+        )
         assert dev_after, "Device not found after flash"
 
         # Verify serial output (extra time — proxy just restarted, device booting)
@@ -1028,8 +1062,14 @@ class TestSerialArchitecture:
             assert "label" in d
             assert "state" in d
             assert d["state"] in (
-                "absent", "idle", "resetting", "monitoring",
-                "flapping", "recovering", "download_mode", "debugging",
+                "absent",
+                "idle",
+                "resetting",
+                "monitoring",
+                "flapping",
+                "recovering",
+                "download_mode",
+                "debugging",
             )
 
     @requires_dut
@@ -1043,22 +1083,24 @@ class TestSerialArchitecture:
             f"usb_devices={dev.get('usb_devices')}"
         )
         assert chip in (
-            "esp32", "esp32s2", "esp32s3",
-            "esp32c3", "esp32c6", "esp32h2",
+            "esp32",
+            "esp32s2",
+            "esp32s3",
+            "esp32c3",
+            "esp32c6",
+            "esp32h2",
         ), f"Unexpected chip: {chip}"
 
     @requires_dut
     def test_wt1902_all_present_devices_detected(self, workbench):
         """WT-1902: Every present DUT slot has a detected chip."""
         devices = workbench.get_devices()
-        duts = [d for d in devices
-                if d.get("present") and not d.get("is_probe")]
+        duts = [d for d in devices if d.get("present") and not d.get("is_probe")]
         assert len(duts) > 0, "No DUT devices present"
         for d in duts:
             chip = d.get("detected_chip") or d.get("debug_chip")
             assert chip, (
-                f"{d['label']}: no chip detected — "
-                f"usb_devices={d.get('usb_devices')}"
+                f"{d['label']}: no chip detected — usb_devices={d.get('usb_devices')}"
             )
 
     @requires_dut
@@ -1133,8 +1175,7 @@ class TestSerialArchitecture:
         result = workbench.serial_monitor(slot, pattern="LOOP:", timeout=15)
         if not result.get("matched"):
             # Firmware may not be running — try a boot message instead
-            result = workbench.serial_monitor(
-                slot, pattern="esp", timeout=10)
+            result = workbench.serial_monitor(slot, pattern="esp", timeout=10)
         # At minimum, we should get some output lines
         assert len(result.get("output", [])) >= 0
 
@@ -1142,8 +1183,7 @@ class TestSerialArchitecture:
     def test_wt1907_multi_slot_detection(self, workbench):
         """WT-1907: Multiple slots independently detect their chips."""
         devices = workbench.get_devices()
-        duts = [d for d in devices
-                if d.get("present") and not d.get("is_probe")]
+        duts = [d for d in devices if d.get("present") and not d.get("is_probe")]
         if len(duts) < 2:
             pytest.skip("Need 2+ DUT devices for multi-slot test")
 
@@ -1160,6 +1200,10 @@ class TestSerialArchitecture:
         # Each slot should have a valid chip
         for label, chip in zip(labels, chips):
             assert chip in (
-                "esp32", "esp32s2", "esp32s3",
-                "esp32c3", "esp32c6", "esp32h2",
+                "esp32",
+                "esp32s2",
+                "esp32s3",
+                "esp32c3",
+                "esp32c6",
+                "esp32h2",
             ), f"{label}: unexpected chip '{chip}'"

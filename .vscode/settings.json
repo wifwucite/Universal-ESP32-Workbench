@@ -1,0 +1,9 @@
+{
+  "python.testing.pytestArgs": [
+    "pytest",
+    "--run-dut",
+    "-v"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
+}
