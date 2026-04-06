@@ -51,9 +51,9 @@ This relies on RFC2217 DTR/RTS control line toggling from esptool:
   to reset the chip while GPIO0 is low at sampling time, entering ROM download mode.
 - If timing works, flash starts without touching board buttons.
 
-### Alternative option
+### Alternative options
 
-Only when GPIOs are wired:
+#### When GPIOs are wired
 
 ```bash
 # 1) Force download mode on SLOT1
@@ -73,6 +73,23 @@ curl -sS -X POST "http://workbench.local:8080/api/serial/release" \
   -H "Content-Type: application/json" \
   -d '{"slot":"SLOT1"}'
 ```
+
+#### When GPIOs are not wired
+
+Step 1: Press and hold the BOOT button, press and release the EN button (toggles the actual reboot/reset, with BOOT down it goes into flashing mode aka bootloader mode), after that release the BOOT button.
+
+```bash
+# 2) Flash over RFC2217
+python -m esptool --chip esp32 \
+  --port "rfc2217://workbench.local:4001?ign_set_control" \
+  --connect-attempts 30
+  --baud 460800 \
+  --before no_reset --after no_reset \
+  write-flash @flash_args
+```
+(Connect attempts allow for more time to press the buttons.)
+
+Step 3: Press and release the EN button (without holding BOOT), reboots/resets the chip into normal execution mode.
 
 ## Optional: Verify Slot Mapping
 
