@@ -55,6 +55,12 @@ SystemMaxUse=16M
 EOF
 sudo systemctl restart systemd-journald
 
+# --- Install git ---
+sudo apt-get install git
+
+# --- Enable UART (/dev/serial0) over serial GPIOs 14 (TX) / 15 (RX) in the interfaces (no login shell) ---
+sudo raspi-config
+
 # --- Reboot to apply gpu_mem ---
 sudo reboot
 ```
