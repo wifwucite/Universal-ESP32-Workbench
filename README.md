@@ -60,7 +60,6 @@ The response includes all 3 slots with serial URLs, chip info, debug status, and
 
 ```bash
 esptool --port rfc2217://workbench.local:4001 --chip esp32c3 \
-  --before default-reset --after no-reset \
   write-flash 0x0 bootloader.bin 0x8000 partition-table.bin 0x10000 firmware.bin
 ```
 
@@ -239,12 +238,7 @@ A browser-based dashboard at **http://pi-ip:8080** showing all 3 serial slots, W
 ```bash
 # Flash via RFC2217 (binaries stay on host, no SCP needed)
 esptool --port rfc2217://workbench.local:4001 --chip esp32c3 \
-  --before default-reset --after no-reset \
   write-flash 0x0 bootloader.bin 0x8000 partition-table.bin 0x10000 firmware.bin
-
-# Reboot device into new firmware
-curl -X POST http://workbench.local:8080/api/serial/reset \
-  -H "Content-Type: application/json" -d '{"slot":"SLOT1"}'
 ```
 
 ### Serial Monitor
