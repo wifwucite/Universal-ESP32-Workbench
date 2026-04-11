@@ -4,17 +4,19 @@
 #include "driver/gpio.h"
 #include "sdkconfig.h"
 
-#if defined(CONFIG_IDF_TARGET_ESP32S3)
-#include "led_strip.h"
-#endif
-
 #if defined(CONFIG_IDF_TARGET_ESP32)
 #define LED_GPIO 2
 #elif defined(CONFIG_IDF_TARGET_ESP32S3)
 // #define LED_GPIO 2
 #define RGB_GPIO 21
+#elif defined(CONFIG_IDF_TARGET_ESP32C3)
+#define RGB_GPIO 8
 #else
 #define LED_GPIO 8
+#endif
+
+#if defined(RGB_GPIO)
+#include "led_strip.h"
 #endif
 
 volatile int loop_counter = 0;
