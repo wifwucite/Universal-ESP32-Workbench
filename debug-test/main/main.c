@@ -8,8 +8,12 @@
 #define LED_GPIO 2
 #elif defined(CONFIG_IDF_TARGET_ESP32S3)
 // #define LED_GPIO 2
+#if defined(MINI)
 #define RGB_GPIO 21
-#elif defined(CONFIG_IDF_TARGET_ESP32C3)
+#else
+#define RGB_GPIO 48
+#endif
+#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32C6)
 #define RGB_GPIO 8
 #else
 #define LED_GPIO 8
