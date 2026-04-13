@@ -2,6 +2,48 @@
 
 Ordered in descending chronological order.
 
+## 26-04-12 (Session 1 - Multi-target debug-test builds)
+
+### Summary
+
+Built the debug-test firmware for three ESP32 variants (S3, C6, standard ESP32) using target-specific commands. Confirmed each build succeeds and generates proper binaries for its platform.
+
+### What we did
+
+- Built debug-test for **ESP32-S3** (pre-existing C6 target was already set):
+  ```bash
+  cd /workspaces/Universal-ESP32-Workbench/debug-test
+  source /opt/esp-idf/export.sh
+  idf.py set-target esp32s3
+  idf.py build
+  ```
+  - Binary generated: `build/debug-test.bin` (~231 KB), 78% free in app partition.
+
+- Built debug-test for **ESP32-C6**:
+  ```bash
+  cd /workspaces/Universal-ESP32-Workbench/debug-test
+  source /opt/esp-idf/export.sh
+  idf.py set-target esp32c6
+  idf.py build
+  ```
+  - Binary generated: `build/debug-test.bin` (~177 KB), 83% free in app partition.
+  - Verified: `CONFIG_IDF_TARGET="esp32c6"` in `sdkconfig`.
+
+- Built debug-test for **standard ESP32**:
+  ```bash
+  cd /workspaces/Universal-ESP32-Workbench/debug-test
+  source /opt/esp-idf/export.sh
+  idf.py set-target esp32
+  idf.py build
+  ```
+  - Binary generated: `build/debug-test.bin` (182 KB).
+  - Verified: `CONFIG_IDF_TARGET="esp32"` in `sdkconfig`.
+
+### Learnings
+
+- **Target switching** with `idf.py set-target <target>` cleanly updates `sdkconfig` and regenerates the CMake build tree; no manual sdkconfig editing needed.
+- **ESP-IDF environment** must be sourced *before* running any `idf.py` commands (e.g., `source /opt/esp-idf/export.sh`), even across multiple builds in the same shell session.
+
 ## 26-04-11 (Session 2 - ESP32-C3 RGB LED compilation)
 
 ### Summary
@@ -16,14 +58,6 @@ Extended debug-test firmware to support ESP32-C3 with onboard RGB LED at GPIO8, 
   - Firmware now cycles RGB LED red → green → blue → off every 500 ms on C3 boards (same as S3 behavior).
 - Compiled the debug-test project for ESP32-C3 using `idf.py set-target esp32c3` and `idf.py build`.
 - Resolved missing ESP-IDF toolchain component (`riscv32-esp-elf-gdb`) by running the tool installer.
-- Build succeeded, generating [debug-test/build/debug-test.bin](debug-test/build/debug-test.bin) (binary size: 0x30c10 bytes, 81% free in partition).
-
-### Learnings
-
-- Most common ESP32-C3 dev boards use GPIO8 for the onboard RGB LED; C3 has no native USB JTAG like S3.
-- Conditional compilation with `CONFIG_IDF_TARGET_*` preprocessor macros cleanly handles multi-target support in the same codebase.
-- ESP-IDF 5.4 toolchain may have missing components (debugger, cross-compiler) that require explicit installation via `idf_tools.py install` even after environment setup.
-- The ROM bootloader reset in C3 takes time to respond over RFC2217 network links; baud rate tuning and `?ign_set_control` appending to the RFC2217 URL help reliability.
 
 ## 26-04-11 (Session 1 - NetworkManager diagnostics)
 
