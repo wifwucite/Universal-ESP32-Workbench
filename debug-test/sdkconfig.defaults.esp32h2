@@ -1,0 +1,4 @@
+# ESP32-H2-specific defaults.
+# Encode max chip revision as major*100 + minor (399 = v3.99).
+# In ESP-IDF v5.4, H2 max revision defaults to 0.99 unless this is enabled.
+CONFIG_ESP32H2_REV100_DEVELOPMENT=y

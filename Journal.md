@@ -14,6 +14,7 @@ Built the debug-test firmware for three ESP32 variants (S3, C6, standard ESP32) 
   ```bash
   cd /workspaces/Universal-ESP32-Workbench/debug-test
   source /opt/esp-idf/export.sh
+  idf.py fullclean
   idf.py set-target esp32s3
   idf.py build
   ```
@@ -42,7 +43,7 @@ Built the debug-test firmware for three ESP32 variants (S3, C6, standard ESP32) 
 ### Learnings
 
 - **Target switching** with `idf.py set-target <target>` cleanly updates `sdkconfig` and regenerates the CMake build tree; no manual sdkconfig editing needed.
-- **ESP-IDF environment** must be sourced *before* running any `idf.py` commands (e.g., `source /opt/esp-idf/export.sh`), even across multiple builds in the same shell session.
+- **ESP-IDF environment** must be sourced *before* running any `idf.py` commands (e.g., `source /opt/esp-idf/export.sh`), even across multiple builds in the same shell session. It can be necessary to call `deactivate` first if another virtual environment is active.
 
 ## 26-04-11 (Session 2 - ESP32-C3 RGB LED compilation)
 

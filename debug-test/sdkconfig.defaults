@@ -1,0 +1,3 @@
+# Persistent defaults for all targets in this project.
+# Keep only cross-target settings here.
+CONFIG_COMPILER_OPTIMIZATION_DEBUG=y

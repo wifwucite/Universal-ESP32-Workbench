@@ -13,10 +13,8 @@
 #else
 #define RGB_GPIO 48
 #endif
-#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32C6)
+#else // defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32H2)
 #define RGB_GPIO 8
-#else
-#define LED_GPIO 8
 #endif
 
 #if defined(RGB_GPIO)
